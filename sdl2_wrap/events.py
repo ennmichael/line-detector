@@ -2,87 +2,25 @@
 
 
 import sdl2
-import abc
-from typing import Tuple, Any
+from typing import Callable
 
 
-class Event(abc.ABC):
-
-    def __init__(self, callback: Any) -> None:
-        self.__callback = callback
-
-    def dispatch(self, raw_event: sdl2.SDL_Event) -> None:
-        if self._should_dispatch(raw_event):
-            self.__callback(*self._callback_parameters_tuple(raw_event))
-
-    @abc.abstractmethod
-    def _should_dispatch(self, raw_event: sdl2.SDL_Event) -> bool:
-        pass
-
-    @abc.abstractmethod
-    def _callback_parameters_tuple(self, raw_event: sdl2.SDL_Event) -> Any:
-        pass
+Event = Callable[[sdl2.SDL_Event], bool]
 
 
-class MouseClick(Event):
-
-    def _should_dispatch(self, raw_event: sdl2.SDL_Event) -> bool:
-        return raw_event.type == sdl2.SDL_MOUSEBUTTONDOWN and \
-               raw_event.button.button == sdl2.SDL_BUTTON_LEFT
-
-    def _callback_parameters_tuple(self, raw_event: sdl2.SDL_Event) -> Tuple[sdl2.SDL_Point]:
-        return (mouse_position(raw_event),)
+def mouse_click(sdl_event: sdl2.SDL_Event) -> bool:
+    return sdl_event.type == sdl2.SDL_MOUSEBUTTONDOWN and \
+           sdl_event.button.button == sdl2.SDL_BUTTON_LEFT
 
 
-class MouseRelease(Event):
-
-    def _should_dispatch(self, raw_event: sdl2.SDL_Event) -> bool:
-        return raw_event.type == sdl2.SDL_MOUSEBUTTONUP
-
-    def _callback_parameters_tuple(self, raw_event: sdl2.SDL_Event) -> Tuple[sdl2.SDL_Point]:
-        return (mouse_position(raw_event),)
+def mouse_release(sdl_event: sdl2.SDL_Event) -> bool:
+    return sdl_event.type == sdl2.SDL_MOUSEBUTTONUP and \
+           sdl_event.button.button == sdl2.SDL_BUTTON_LEFT
 
 
-class MouseMotion(Event):
-
-    def _should_dispatch(self, raw_event: sdl2.SDL_Event) -> bool:
-        return raw_event.type == sdl2.SDL_MOUSEMOTION
-
-    def _callback_parameters_tuple(self, raw_event: sdl2.SDL_Event) -> Tuple[sdl2.SDL_Point]:
-        return (mouse_position(raw_event),)
+def mouse_motion(sdl_event: sdl2.SDL_Event) -> bool:
+    return sdl_event.type == sdl2.SDL_MOUSEMOTION
 
 
-def mouse_position(raw_event: sdl2.SDL_Event) -> sdl2.SDL_Point:
-    return sdl2.SDL_Point(raw_event.button.x, raw_event.button.y)
-
-
-class UserQuit(Event):
-
-    def _should_dispatch(self, raw_event: sdl2.SDL_Event) -> bool:
-        return raw_event.type == sdl2.SDL_QUIT
-
-    def _callback_parameters_tuple(self, raw_event: sdl2.SDL_Event) -> Any:
-        return ()
-
-
-class Anything(Event):
-
-    def _should_dispatch(self, raw_event: sdl2.SDL_Event) -> bool:
-        return True
-
-    def _callback_parameters_tuple(self, raw_event: sdl2.SDL_Event) -> Any:
-        return ()
-
-
-class AppStarted(Event):
-
-    __dispatched = False
-
-    def _should_dispatch(self, raw_event: sdl2.SDL_Event) -> bool:
-        if not AppStarted.__dispatched:
-            AppStarted.__dispatched = True
-            return True
-        return False
-
-    def _callback_parameters_tuple(self, raw_event: sdl2.SDL_Event) -> Any:
-        return ()
+def user_quit(sdl_event: sdl2.SDL_Event) -> bool:
+    return sdl_event.type == sdl2.SDL_QUIT
