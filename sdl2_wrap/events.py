@@ -24,3 +24,7 @@ def mouse_motion(sdl_event: sdl2.SDL_Event) -> bool:
 
 def user_quit(sdl_event: sdl2.SDL_Event) -> bool:
     return sdl_event.type == sdl2.SDL_QUIT
+
+
+def anything(_: sdl2.SDL_Event) -> bool:
+    return True
