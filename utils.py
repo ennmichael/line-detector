@@ -16,11 +16,11 @@ def distance(p1: sdl2.SDL_Point, p2: sdl2.SDL_Point) -> float:
     13.0
     """
 
-    distances = single_distances(p1, p2)
+    distances = xy_distances(p1, p2)
     return math.sqrt(distances.x**2 + distances.y**2)
 
 
-def single_distances(p1: sdl2.SDL_Point, p2: sdl2.SDL_Point) -> sdl2.SDL_Point:  # TODO Needs a better name
+def xy_distances(p1: sdl2.SDL_Point, p2: sdl2.SDL_Point) -> sdl2.SDL_Point:  # TODO Needs a better name
     return sdl2.SDL_Point(
         x_distance(p1, p2),
         y_distance(p1, p2)
@@ -60,8 +60,8 @@ def y_distance(p1: sdl2.SDL_Point, p2: sdl2.SDL_Point) -> int:
 Rads = NewType('Rads', float)
 
 
-def angle_between_points(p1: sdl2.SDL_Point, p2: sdl2.SDL_Point) -> Rads:
-    distances = single_distances(p1, p2)
+def angle_between_points(p1: sdl2.SDL_Point, p2: sdl2.SDL_Point) -> Rads:  # TODO Write test for this
+    distances = xy_distances(p1, p2)
     return Rads(math.pi/2 if distances.x == 0 else math.atan(distances.y/distances.x))
 
 
