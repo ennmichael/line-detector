@@ -3,7 +3,7 @@
 
 import sdl2.ext
 from . import events
-from typing import Callable, Any, List, Tuple
+from typing import Callable, Any, List, Tuple, Iterable
 
 
 class ControlFlowException(Exception):
@@ -26,14 +26,14 @@ class EventLoop:
             raise QuitEventLoop
 
         event_loop = EventLoop()
-        event_loop.on(event=events.user_quit, callback=default_quit_callback)
+        event_loop.on(event=events.user_quit, callbacks=[default_quit_callback])
         return event_loop
 
     def __init__(self) -> None:
         self.__events_and_callbacks: List[Tuple[events.Event, EventCallback]] = []
 
-    def on(self, *, event: events.Event, callback: EventCallback) -> Any:
-        self.__events_and_callbacks.append((event, callback))
+    def on(self, *, event: events.Event, callbacks: Iterable[EventCallback]) -> Any:
+        self.__events_and_callbacks.extend((event, callback) for callback in callbacks)
 
     def run(self) -> None:
         while True:
