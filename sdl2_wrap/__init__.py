@@ -4,3 +4,4 @@
 from .managed import *
 from .eventloop import *
 from . import events
+from . import colors
