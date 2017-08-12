@@ -6,17 +6,38 @@ import sdl2
 import math
 import utils
 import statistics
+import sdl2.ext
 from typing import List, Iterable, Tuple
 
 
 Stroke = List[sdl2.SDL_Point]
 
 
+def paint_stroke_callback(
+        renderer: sdl2_wrap.Renderer,
+        stroke: Stroke,
+        stroke_color: sdl2.ext.Color) -> sdl2_wrap.EventCallback:
+
+    last_drawn_point: sdl2.SDL_Point = None
+
+    def callback(_: sdl2.SDL_Event) -> None:
+        nonlocal last_drawn_point
+
+        if len(stroke) == 1:
+            last_drawn_point = stroke[-1]
+
+        if len(stroke) >= 2 and last_drawn_point is not stroke[-1]:
+            renderer.draw_line((last_drawn_point.x, last_drawn_point.y, stroke[-1].x, stroke[-1].y), stroke_color)
+            last_drawn_point = stroke[-1]
+
+    return callback
+
+
 def start_main_loop(
         event_loop: sdl2_wrap.EventLoop,
         renderer: sdl2_wrap.Renderer,
         tracking_distance: int,
-        stroke_color: sdl2.SDL_Color,
+        stroke_color: sdl2.ext.Color,
         tolerance: utils.Rads) -> None:
 
     stroke: Stroke = []
@@ -48,21 +69,11 @@ def start_main_loop(
         else:
             print('Not a line')
 
-    def redraw(_: sdl2.SDL_Event) -> None:
+    paint_stroke = paint_stroke_callback(renderer, stroke, stroke_color)
 
-        def draw_stroke():
-            for p1, p2 in point_pairs(stroke):
-                renderer.draw_line((p1.x, p1.y, p2.x, p2.y), stroke_color)
-
-        renderer.clear()
-        draw_stroke()
-        renderer.present()
-
-    event_loop.on(event=sdl2_wrap.events.mouse_click, callbacks=[start_tracking_stroke])
-    event_loop.on(event=sdl2_wrap.events.mouse_motion, callbacks=[add_motion_to_stroke])
+    event_loop.on(event=sdl2_wrap.events.mouse_click, callbacks=[start_tracking_stroke, renderer.clear])
+    event_loop.on(event=sdl2_wrap.events.mouse_motion, callbacks=[add_motion_to_stroke, paint_stroke])
     event_loop.on(event=sdl2_wrap.events.mouse_release, callbacks=[stop_tracking_stroke, give_feedback])
-    event_loop.on(event=sdl2_wrap.events.anything, callbacks=[redraw])
-    # TODO ^ Inefficient for no reason, don't use events.anything
 
     event_loop.run()
 
