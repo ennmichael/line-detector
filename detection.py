@@ -23,11 +23,12 @@ def paint_stroke_callback(
     def callback(_: sdl2.SDL_Event) -> None:
         nonlocal last_drawn_point
 
-        if len(stroke) == 1:
-            last_drawn_point = stroke[-1]
+        if len(stroke) == 2:
+            last_drawn_point = stroke[0]
 
-        if len(stroke) >= 2 and last_drawn_point is not stroke[-1]:
+        if len(stroke) > 2 and last_drawn_point is not stroke[-1]:
             renderer.draw_line((last_drawn_point.x, last_drawn_point.y, stroke[-1].x, stroke[-1].y), stroke_color)
+            renderer.present()
             last_drawn_point = stroke[-1]
 
     return callback
@@ -43,25 +44,34 @@ def start_main_loop(
     stroke: Stroke = []
     tracking_stroke = False
 
-    def start_tracking_stroke(sdl_event: sdl2.SDL_Event) -> None:
+    def start_tracking_stroke(click_event: sdl2.SDL_Event) -> None:
         nonlocal tracking_stroke
         nonlocal stroke
-        stroke = [sdl2.SDL_Point(sdl_event.button.x, sdl_event.button.y)]
+        stroke = [sdl2.SDL_Point(click_event.button.x, click_event.button.y)]
         tracking_stroke = True
 
-    def add_motion_to_stroke(sdl_event: sdl2.SDL_Event) -> None:
-        point = sdl2.SDL_Point(sdl_event.motion.x, sdl_event.motion.y)
+    def add_motion_to_stroke(motion_event: sdl2.SDL_Event) -> None:
+        point = sdl2_wrap.motion_position(motion_event)
         if tracking_stroke and point_can_be_added(point):
             stroke.append(point)
 
     def point_can_be_added(point: sdl2.SDL_Point) -> bool:
         if not stroke:
             return True
+        return point_is_at_tracking_distance(point)
+
+    def point_is_at_tracking_distance(point: sdl2.SDL_Point) -> bool:
         return utils.distance(stroke[-1], point) >= tracking_distance
 
     def stop_tracking_stroke(_: sdl2.SDL_Event) -> None:
         nonlocal tracking_stroke
         tracking_stroke = False
+
+    def draw_new_point(motion_event: sdl2.SDL_Event):
+        motion_position = sdl2_wrap.motion_position(motion_event)
+        if tracking_stroke and point_is_at_tracking_distance(motion_position):
+            renderer.draw_line((stroke[-1].x, stroke[-1].y, motion_position.x, motion_position.y), stroke_color)
+            renderer.present()
 
     def give_feedback(_: sdl2.SDL_Event) -> None:
         if is_line(stroke, tolerance):
@@ -69,10 +79,11 @@ def start_main_loop(
         else:
             print('Not a line')
 
-    paint_stroke = paint_stroke_callback(renderer, stroke, stroke_color)
+    def clear_renderer(_: sdl2.SDL_Event) -> None:
+        renderer.clear()
 
-    event_loop.on(event=sdl2_wrap.events.mouse_click, callbacks=[start_tracking_stroke, renderer.clear])
-    event_loop.on(event=sdl2_wrap.events.mouse_motion, callbacks=[add_motion_to_stroke, paint_stroke])
+    event_loop.on(event=sdl2_wrap.events.mouse_click, callbacks=[start_tracking_stroke, clear_renderer])
+    event_loop.on(event=sdl2_wrap.events.mouse_motion, callbacks=[draw_new_point, add_motion_to_stroke])
     event_loop.on(event=sdl2_wrap.events.mouse_release, callbacks=[stop_tracking_stroke, give_feedback])
 
     event_loop.run()
