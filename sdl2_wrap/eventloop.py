@@ -30,20 +30,20 @@ class EventLoop:
         return event_loop
 
     def __init__(self) -> None:
-        self.__events_and_callbacks: List[Tuple[events.Event, EventCallback]] = []
+        self.events_and_callbacks: List[Tuple[events.Event, EventCallback]] = []
 
     def on(self, *, event: events.Event, callbacks: Iterable[EventCallback]) -> Any:
-        self.__events_and_callbacks.extend((event, callback) for callback in callbacks)
+        self.events_and_callbacks.extend((event, callback) for callback in callbacks)
 
     def run(self) -> None:
         while True:
             for sdl_event in sdl2.ext.get_events():
                 try:
-                    self.__dispatch_event(sdl_event)
+                    self.dispatch_event(sdl_event)
                 except QuitEventLoop:
                     return
 
-    def __dispatch_event(self, sdl_event: sdl2.SDL_Event) -> None:
-        for event, callback in self.__events_and_callbacks:
+    def dispatch_event(self, sdl_event: sdl2.SDL_Event) -> None:
+        for event, callback in self.events_and_callbacks:
             if event(sdl_event):
                 callback(sdl_event)
